@@ -139,6 +139,7 @@
         </header>
 
         <div class="container">
+            <!-- DEBUG: Angular version @{{ 'Angular OK: ' + (1+1) }} -->
             <!-- Dashboard -->
             <div ng-if="view == 'dashboard'">
                 <h2>Dashboard</h2>
