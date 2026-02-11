@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 class Cliente extends Model
 {
     protected $fillable = [
+        'user_id',
         'nome',
         'email',
         'telefone',
@@ -17,4 +18,9 @@ class Cliente extends Model
     protected $hidden = [];
     
     protected $casts = [];
+    
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
 }

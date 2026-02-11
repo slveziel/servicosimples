@@ -6,12 +6,16 @@ use App\Http\Controllers\Controller;
 use App\Models\Servico;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Auth;
 
 class ServicoController extends Controller
 {
     public function index()
     {
-        return response()->json(Servico::orderBy('nome')->get());
+        $servicos = Servico::where('user_id', Auth::id())
+            ->orderBy('nome')
+            ->get();
+        return response()->json($servicos);
     }
 
     public function store(Request $request)
@@ -26,17 +30,27 @@ class ServicoController extends Controller
             return response()->json(['errors' => $validator->errors()], 422);
         }
 
-        $servico = Servico::create($request->all());
+        $servico = Servico::create(array_merge(
+            $request->all(),
+            ['user_id' => Auth::id()]
+        ));
         return response()->json($servico, 201);
     }
 
     public function show(Servico $servico)
     {
+        if ($servico->user_id !== Auth::id()) {
+            return response()->json(['message' => 'Não autorizado'], 403);
+        }
         return response()->json($servico);
     }
 
     public function update(Request $request, Servico $servico)
     {
+        if ($servico->user_id !== Auth::id()) {
+            return response()->json(['message' => 'Não autorizado'], 403);
+        }
+
         $validator = Validator::make($request->all(), [
             'nome' => 'required|string|max:255',
             'descricao' => 'nullable|string',
@@ -53,6 +67,10 @@ class ServicoController extends Controller
 
     public function destroy(Servico $servico)
     {
+        if ($servico->user_id !== Auth::id()) {
+            return response()->json(['message' => 'Não autorizado'], 403);
+        }
+
         $servico->delete();
         return response()->json(null, 204);
     }
