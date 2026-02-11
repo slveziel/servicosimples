@@ -12,9 +12,9 @@
         header { background: #2c3e50; color: white; padding: 15px 20px; margin-bottom: 20px; }
         header h1 { display: inline-block; }
         .nav { float: right; display: flex; align-items: center; gap: 10px; }
-        .nav button, .nav a { background: transparent; border: 1px solid white; color: white; padding: 8px 15px; margin-left: 10px; cursor: pointer; border-radius: 4px; text-decoration: none; font-size: 14px; }
+        .nav button, .nav span { background: transparent; border: 1px solid white; color: white; padding: 8px 15px; margin-left: 10px; cursor: pointer; border-radius: 4px; text-decoration: none; font-size: 14px; display: inline-block; }
         .nav button.active, .nav button:hover { background: white; color: #2c3e50; }
-        .nav .user-info { color: white; margin-right: 10px; font-size: 14px; }
+        .nav .user-info { border: none; background: transparent; }
         .card { background: white; border-radius: 8px; padding: 20px; margin-bottom: 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
         .stats { display: flex; gap: 20px; flex-wrap: wrap; margin-bottom: 20px; }
         .stat { flex: 1; min-width: 150px; background: white; padding: 20px; border-radius: 8px; text-align: center; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
@@ -57,16 +57,15 @@
         .auth-box h2 { text-align: center; margin-bottom: 10px; color: #2c3e50; }
         .auth-box p { text-align: center; color: #666; margin-bottom: 30px; }
         .auth-box .form-group { margin-bottom: 20px; }
-        .auth-box .btn { width: 100%; padding: 12px; font-size: 16px; }
-        .auth-box .link { text-align: center; margin-top: 20px; color: #3498db; cursor: pointer; }
-        .auth-box .link:hover { text-decoration: underline; }
+        .auth-box .btn-primary { width: 100%; padding: 12px; font-size: 16px; }
+        .auth-link { display: block; text-align: center; margin-top: 20px; color: #3498db; cursor: pointer; }
+        .auth-link:hover { text-decoration: underline; }
         .text-center { text-align: center; }
-        .mt-20 { margin-top: 20px; }
     </style>
 </head>
 <body ng-controller="MainController">
     
-    <!-- TELA DE AUTENTICAÇÃO (LOGIN/REGISTRO) -->
+    <!-- TELA DE AUTENTICAÇÃO -->
     <div ng-if="!isAuthenticated()" class="auth-container">
         <!-- Login -->
         <div class="auth-box" ng-if="authView == 'login'">
@@ -87,7 +86,7 @@
                 <button type="submit" class="btn btn-primary">Entrar</button>
             </form>
             
-            <div class="link" ng-click="authView = 'register'">Não tem conta? Cadastre-se</div>
+            <div class="auth-link" ng-click="setAuthView('register')">Não tem conta? Cadastre-se</div>
         </div>
 
         <!-- Registro -->
@@ -121,11 +120,11 @@
                 <button type="submit" class="btn btn-primary">Cadastrar</button>
             </form>
             
-            <div class="link" ng-click="authView = 'login'">Já tem conta? Faça login</div>
+            <div class="auth-link" ng-click="setAuthView('login')">Já tem conta? Faça login</div>
         </div>
     </div>
 
-    <!-- APLICAÇÃO PRINCIPAL (só mostra se logado) -->
+    <!-- APLICAÇÃO PRINCIPAL -->
     <div ng-if="isAuthenticated()">
         <header>
             <h1>🔧 ServicoSimples</h1>
@@ -181,7 +180,7 @@
                     <button class="btn btn-primary" ng-click="openModalOS()">+ Nova OS</button>
                 </div>
                 <div class="card">
-                    <input type="text" class="search-box" ng-model="searchOS" placeholder="Buscar ordens de serviço...">
+                    <input type="text" class="search-box" ng-model="searchOS" placeholder="Buscar ordens...">
                     <br><br>
                     <table>
                         <thead>
@@ -208,7 +207,7 @@
                                 </td>
                             </tr>
                             <tr ng-if="ordemServicos.length === 0">
-                                <td colspan="6" class="text-center">Nenhuma ordem de serviço cadastrada</td>
+                                <td colspan="6" class="text-center">Nenhuma OS cadastrada</td>
                             </tr>
                         </tbody>
                     </table>
@@ -376,10 +375,10 @@
                     </div>
                     <div class="form-group">
                         <label>Valor (R$) *</label>
-                        <input type="number" step="0.01ordemServico.valor" required" ng-model=">
+                        <input type="number" step="0.01" ng-model="ordemServico.valor" required>
                     </div>
-                    <div" ng-if="editandoOS">
- class="form-group                        <label>Status</label>
+                    <div class="form-group" ng-if="editandoOS">
+                        <label>Status</label>
                         <select ng-model="ordemServico.status">
                             <option value="pendente">Pendente</option>
                             <option value="concluido">Concluído</option>
@@ -399,9 +398,14 @@
     <script>
         var app = angular.module('servicoSimples', []);
         
-        app.controller('MainController', function($scope, $http, $window) {
+        app.controller('MainController', function($scope, $http) {
             // Auth state
             $scope.authView = 'login';
+            $scope.setAuthView = function(view) {
+                $scope.authView = view;
+                $scope.authError = '';
+            };
+            
             $scope.isAuthenticated = function() {
                 return !!localStorage.getItem('auth_token');
             };
@@ -483,7 +487,7 @@
                     $scope.servicos = [];
                     $scope.ordemServicos = [];
                     $scope.dashboard = {};
-                    $scope.authView = 'login';
+                    $scope.setAuthView('login');
                 });
             };
             
