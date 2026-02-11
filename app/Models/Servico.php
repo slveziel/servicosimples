@@ -6,5 +6,13 @@ use Illuminate\Database\Eloquent\Model;
 
 class Servico extends Model
 {
-    //
+    protected $fillable = [
+        'nome',
+        'descricao',
+        'valor_padrao',
+    ];
+    
+    protected $hidden = [];
+    
+    protected $casts = [];
 }
