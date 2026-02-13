@@ -40,9 +40,12 @@ Route::middleware('auth:sanctum')->group(function () {
     // Assinatura (pagamentos Asaas)
     Route::prefix('subscription')->group(function () {
         Route::get('/status', [SubscriptionController::class, 'status']);
+        Route::get('/details', [SubscriptionController::class, 'details']);
         Route::post('/customer', [SubscriptionController::class, 'createCustomer']);
         Route::post('/create', [SubscriptionController::class, 'createSubscription']);
         Route::get('/payment-link', [SubscriptionController::class, 'getPaymentLink']);
+        Route::post('/pause', [SubscriptionController::class, 'pause']);
+        Route::post('/resume', [SubscriptionController::class, 'resume']);
         Route::post('/cancel', [SubscriptionController::class, 'cancel']);
     });
 

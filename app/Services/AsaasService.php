@@ -172,6 +172,66 @@ class AsaasService
     }
 
     /**
+     * Pausar assinatura
+     */
+    public function pauseSubscription(string $subscriptionId, ?int $cycles = null): array
+    {
+        $body = ['cycles' => $cycles] + ['immediate' => true];
+
+        $response = Http::withHeaders([
+            'access_token' => $this->apiKey,
+            'Content-Type' => 'application/json',
+        ])->post("{$this->baseUrl}/subscriptions/{$subscriptionId}/pause", $body);
+
+        if ($response->failed()) {
+            Log::error('Asaas pauseSubscription failed', [
+                'status' => $response->status(),
+                'body' => $response->body(),
+            ]);
+            throw new \Exception('Erro ao pausar assinatura');
+        }
+
+        return $response->json();
+    }
+
+    /**
+     * Retomar assinatura pausada
+     */
+    public function resumeSubscription(string $subscriptionId): array
+    {
+        $response = Http::withHeaders([
+            'access_token' => $this->apiKey,
+            'Content-Type' => 'application/json',
+        ])->post("{$this->baseUrl}/subscriptions/{$subscriptionId}/resume");
+
+        if ($response->failed()) {
+            Log::error('Asaas resumeSubscription failed', [
+                'status' => $response->status(),
+                'body' => $response->body(),
+            ]);
+            throw new \Exception('Erro ao retomar assinatura');
+        }
+
+        return $response->json();
+    }
+
+    /**
+     * Obter detalhes da assinatura
+     */
+    public function getSubscription(string $subscriptionId): array
+    {
+        $response = Http::withHeaders([
+            'access_token' => $this->apiKey,
+        ])->get("{$this->baseUrl}/subscriptions/{$subscriptionId}");
+
+        if ($response->failed()) {
+            throw new \Exception('Erro ao obter assinatura');
+        }
+
+        return $response->json();
+    }
+
+    /**
      * Webhook - processar notificacoes do Asaas
      */
     public function handleWebhook(array $payload): void

@@ -17,17 +17,21 @@ class Subscription extends Model
         'price',
         'current_period_end',
         'cancelled_at',
+        'paused_at',
+        'paused_reason',
     ];
 
     protected $casts = [
         'price' => 'decimal:2',
         'current_period_end' => 'date',
         'cancelled_at' => 'datetime',
+        'paused_at' => 'datetime',
     ];
 
     const STATUS = [
         'pending_payment' => 'pending_payment',
         'active' => 'active',
+        'paused' => 'paused',
         'suspended' => 'suspended',
         'cancelled' => 'cancelled',
     ];

@@ -232,4 +232,141 @@ class SubscriptionController extends BaseController
             return response()->json(['error' => 'Erro ao cancelar'], 500);
         }
     }
+
+    /**
+     * Pausar assinatura
+     */
+    public function pause(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'reason' => 'nullable|string|max:255',
+            'cycles' => 'nullable|integer|min:1|max:12',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()], 422);
+        }
+
+        $user = Auth::user();
+        $subscription = Subscription::where('user_id', $user->id)
+            ->where('status', 'active')
+            ->first();
+
+        if (!$subscription || empty($subscription->asaas_subscription_id)) {
+            return response()->json(['error' => 'Nenhuma assinatura ativa para pausar'], 400);
+        }
+
+        try {
+            $this->asaasService->pauseSubscription(
+                $subscription->asaas_subscription_id,
+                $request->cycles ?? 1
+            );
+
+            $subscription->update([
+                'status' => 'paused',
+                'paused_at' => now(),
+                'paused_reason' => $request->reason ?? 'Pause solicitado pelo usuário',
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Assinatura pausada com sucesso',
+                'paused_at' => now()->toIso8601String(),
+                'reason' => $request->reason ?? 'Pause solicitado pelo usuário',
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Erro ao pausar assinatura', ['error' => $e->getMessage()]);
+            return response()->json(['error' => 'Erro ao pausar'], 500);
+        }
+    }
+
+    /**
+     * Retomar assinatura pausada
+     */
+    public function resume(Request $request)
+    {
+        $user = Auth::user();
+        $subscription = Subscription::where('user_id', $user->id)
+            ->where('status', 'paused')
+            ->first();
+
+        if (!$subscription || empty($subscription->asaas_subscription_id)) {
+            return response()->json(['error' => 'Nenhuma assinatura pausada'], 400);
+        }
+
+        try {
+            $this->asaasService->resumeSubscription($subscription->asaas_subscription_id);
+
+            $subscription->update([
+                'status' => 'active',
+                'paused_at' => null,
+                'paused_reason' => null,
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Assinatura retomada com sucesso',
+                'resumed_at' => now()->toIso8601String(),
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Erro ao retomar assinatura', ['error' => $e->getMessage()]);
+            return response()->json(['error' => 'Erro ao retomar'], 500);
+        }
+    }
+
+    /**
+     * Obter detalhes completos da assinatura
+     */
+    public function details(Request $request)
+    {
+        $user = Auth::user();
+        $subscription = Subscription::where('user_id', $user->id)->first();
+
+        if (!$subscription) {
+            return response()->json([
+                'has_subscription' => false,
+                'message' => 'Nenhuma assinatura encontrada',
+            ]);
+        }
+
+        // Obter detalhes do Asaas se tiver subscription_id
+        $asaasDetails = null;
+        if (!empty($subscription->asaas_subscription_id)) {
+            try {
+                $asaasDetails = $this->asaasService->getSubscription($subscription->asaas_subscription_id);
+            } catch (\Exception $e) {
+                Log::warning('Não foi possível obter detalhes do Asaas', ['error' => $e->getMessage()]);
+            }
+        }
+
+        return response()->json([
+            'has_subscription' => true,
+            'status' => $subscription->status,
+            'plan' => [
+                'name' => 'Mensal',
+                'price' => $this->monthlyPrice,
+                'currency' => 'BRL',
+            ],
+            'current_period' => [
+                'start' => $subscription->created_at?->toIso8601String(),
+                'end' => $subscription->current_period_end?->toIso8601String(),
+            ],
+            'billing' => [
+                'type' => $asaasDetails['billingType'] ?? 'BOLETO',
+                'value' => $subscription->price,
+            ],
+            'paused' => [
+                'is_paused' => $subscription->status === 'paused',
+                'paused_at' => $subscription->paused_at?->toIso8601String(),
+                'reason' => $subscription->paused_reason,
+            ],
+            'cancelled' => [
+                'is_cancelled' => $subscription->status === 'cancelled',
+                'cancelled_at' => $subscription->cancelled_at?->toIso8601String(),
+            ],
+            'created_at' => $subscription->created_at->toIso8601String(),
+            'asaas_customer_id' => $subscription->asaas_customer_id,
+            'asaas_subscription_id' => $subscription->asaas_subscription_id,
+        ]);
+    }
 }
