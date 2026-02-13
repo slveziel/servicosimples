@@ -46,6 +46,10 @@
         .badge-pendente { background: #f39c12; }
         .badge-concluido { background: #3498db; }
         .badge-pago { background: #27ae60; }
+        .badge-active { background: #27ae60; }
+        .badge-paused { background: #f39c12; }
+        .badge-cancelled { background: #e74c3c; }
+        .badge-danger { background: #e74c3c; }
         .search-box { padding: 10px; border: 1px solid #ddd; border-radius: 4px; width: 300px; }
         .toolbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
         .error { background: #e74c3c; color: white; padding: 10px; border-radius: 4px; margin-bottom: 10px; }
@@ -134,6 +138,7 @@
                 <button ng-class="{active: view == 'ordens'}" ng-click="view = 'ordens'">Ordens de Serviço</button>
                 <button ng-class="{active: view == 'clientes'}" ng-click="view = 'clientes'">Clientes</button>
                 <button ng-class="{active: view == 'servicos'}" ng-click="view = 'servicos'">Serviços</button>
+                <button ng-class="{active: view == 'assinatura'}" ng-click="view = 'assinatura'; loadSubscriptionDetails()">Assinatura</button>
                 <button ng-click="logout()">Sair</button>
             </nav>
         </header>
@@ -286,6 +291,136 @@
                             </tr>
                         </tbody>
                     </table>
+                </div>
+            </div>
+
+            <!-- Assinatura -->
+            <div ng-if="view == 'assinatura'">
+                <h2>Minha Assinatura</h2>
+                <br>
+                
+                <!-- Status da Assinatura -->
+                <div class="card">
+                    <div ng-if="!subscription.has_subscription">
+                        <div class="text-center">
+                            <h3>🔓 Assinatura Inativa</h3>
+                            <p>Ative sua assinatura para usar todos os recursos do ServicoSimples</p>
+                            <br>
+                            <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; max-width: 400px; margin: 0 auto;">
+                                <h4 style="color: #2c3e50;">Plano Mensal</h4>
+                                <h2 style="color: #27ae60; font-size: 3em;">R$ 19,00<span style="font-size: 0.3em; color: #666;">/mês</span></h2>
+                                <p>Primeiro mês proporcional (até dia 5)</p>
+                                <br>
+                                <button class="btn btn-primary" ng-click="startSubscription()">Ativar Assinatura</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div ng-if="subscription.has_subscription">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                            <div>
+                                <span class="badge" ng-class="{'badge-pago': subscription.status == 'active', 'badge-pendente': subscription.status == 'pending_payment', 'badge-concluido': subscription.status == 'paused', 'badge-danger': subscription.status == 'cancelled'}" ng-bind="subscription.status_label"></span>
+                            </div>
+                            <div ng-if="subscription.next_payment">
+                                <small>Próxima cobrança: @{{ subscription.next_payment | date:'dd/MM/yyyy' }}</small>
+                            </div>
+                        </div>
+
+                        <!-- Detalhes do Plano -->
+                        <div class="stats">
+                            <div class="stat">
+                                <h4>Plano</h4>
+                                <p>@{{ subscription.plan_name || 'Mensal' }}</p>
+                            </div>
+                            <div class="stat green">
+                                <h4>Valor</h4>
+                                <p>R$ @{{ subscription.price | number:2 }}</p>
+                            </div>
+                            <div class="stat blue">
+                                <h4>Ciclo</h4>
+                                <p>Mensal</p>
+                            </div>
+                        </div>
+
+                        <!-- Informações de Cobrança -->
+                        <div ng-if="subscription.billing_info" style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                            <h4>Informações de Cobrança</h4>
+                            <p><strong>Tipo:</strong> @{{ subscription.billing_type }}</p>
+                            <p><strong>Cliente Asaas:</strong> @{{ subscription.asaas_customer_id }}</p>
+                        </div>
+
+                        <!-- Período Pausado -->
+                        <div ng-if="subscription.paused && subscription.paused.is_paused" style="background: #fff3cd; padding: 15px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #f39c12;">
+                            <h4>⏸️ Assinatura Pausada</h4>
+                            <p>Desde: @{{ subscription.paused.paused_at | date:'dd/MM/yyyy HH:mm' }}</p>
+                            <p ng-if="subscription.paused.reason">Motivo: @{{ subscription.paused.reason }}</p>
+                            <br>
+                            <button class="btn btn-success" ng-click="resumeSubscription()">Retomar Assinatura</button>
+                        </div>
+
+                        <!-- Ações -->
+                        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                            <button class="btn btn-secondary" ng-click="showPauseModal = true" ng-if="subscription.status == 'active' && !subscription.paused.is_paused">
+                                ⏸️ Pausar Assinatura
+                            </button>
+                            <button class="btn btn-danger" ng-click="showCancelModal = true" ng-if="subscription.status == 'active' || subscription.status == 'paused'">
+                                ❌ Cancelar Assinatura
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal de Pause -->
+        <div class="modal" ng-class="{active: showPauseModal}">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>⏸️ Pausar Assinatura</h2>
+                    <button class="close" ng-click="showPauseModal = false">&times;</button>
+                </div>
+                <div class="card">
+                    <p>Por quanto tempo você deseja pausar sua assinatura?</p>
+                    <br>
+                    <div class="form-group">
+                        <label>Motivo (opcional)</label>
+                        <input type="text" ng-model="pauseReason" placeholder="Ex: Férias, pausa temporária...">
+                    </div>
+                    <div class="form-group">
+                        <label>Ciclos para pausar</label>
+                        <select ng-model="pauseCycles">
+                            <option value="1">1 mês</option>
+                            <option value="2">2 meses</option>
+                            <option value="3">3 meses</option>
+                            <option value="6">6 meses</option>
+                        </select>
+                    </div>
+                    <div style="display: flex; gap: 10px;">
+                        <button class="btn btn-secondary" ng-click="showPauseModal = false">Cancelar</button>
+                        <button class="btn btn-primary" ng-click="pauseSubscription()">Pausar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal de Cancelamento -->
+        <div class="modal" ng-class="{active: showCancelModal}">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>❌ Cancelar Assinatura</h2>
+                    <button class="close" ng-click="showCancelModal = false">&times;</button>
+                </div>
+                <div class="card">
+                    <div style="background: #f8d7da; padding: 15px; border-radius: 8px; margin-bottom: 15px; border-left: 4px solid #e74c3c;">
+                        <strong>Atenção!</strong><br>
+                        Ao cancelar sua assinatura, você perderá acesso a todos os recursos do ServicoSimples ao final do período atual.
+                    </div>
+                    <p>Tem certeza que deseja cancelar?</p>
+                    <br>
+                    <div style="display: flex; gap: 10px;">
+                        <button class="btn btn-secondary" ng-click="showCancelModal = false">Manter Assinatura</button>
+                        <button class="btn btn-danger" ng-click="cancelSubscription()">Sim, Cancelar</button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -666,6 +801,88 @@
                         loadDashboard();
                     });
                 }
+            };
+            
+            // Subscription functions
+            $scope.subscription = {};
+            $scope.showPauseModal = false;
+            $scope.showCancelModal = false;
+            $scope.pauseReason = '';
+            $scope.pauseCycles = 1;
+            
+            $scope.loadSubscriptionDetails = function() {
+                $http.get(API + '/subscription/details').then(function(res) {
+                    $scope.subscription = res.data;
+                    // Map status to label
+                    var statusLabels = {
+                        'pending_payment': 'Aguardando Pagamento',
+                        'active': 'Ativa',
+                        'paused': 'Pausada',
+                        'suspended': 'Suspensa',
+                        'cancelled': 'Cancelada'
+                    };
+                    $scope.subscription.status_label = statusLabels[$scope.subscription.status] || $scope.subscription.status;
+                }).catch(function(err) {
+                    console.log('Erro ao carregar assinatura:', err);
+                    $scope.subscription = { has_subscription: false };
+                });
+            };
+            
+            $scope.startSubscription = function() {
+                if (!confirm('Deseja ativar sua assinatura por R$ 19,00/mês?')) return;
+                
+                // Primeiro criar customer
+                $http.post(API + '/subscription/customer', {
+                    name: $scope.currentUser.name,
+                    email: $scope.currentUser.email
+                }).then(function(res) {
+                    // Depois criar assinatura
+                    return $http.post(API + '/subscription/create', {
+                        billing_type: 'BOLETO'
+                    });
+                }).then(function(res) {
+                    alert('Assinatura criada! Cobrança de R$ ' + res.data.value + ' gerada. Vence em ' + res.data.due_date);
+                    $scope.loadSubscriptionDetails();
+                }).catch(function(err) {
+                    alert('Erro ao criar assinatura: ' + (err.data ? err.data.error : 'Erro de conexão'));
+                });
+            };
+            
+            $scope.pauseSubscription = function() {
+                $http.post(API + '/subscription/pause', {
+                    reason: $scope.pauseReason,
+                    cycles: $scope.pauseCycles
+                }).then(function(res) {
+                    $scope.showPauseModal = false;
+                    $scope.pauseReason = '';
+                    alert('Assinatura pausada com sucesso!');
+                    $scope.loadSubscriptionDetails();
+                }).catch(function(err) {
+                    alert('Erro ao pausar: ' + (err.data ? err.data.error : 'Erro de conexão'));
+                });
+            };
+            
+            $scope.resumeSubscription = function() {
+                if (!confirm('Deseja retomar sua assinatura?')) return;
+                
+                $http.post(API + '/subscription/resume').then(function(res) {
+                    alert('Assinatura retomada com sucesso!');
+                    $scope.loadSubscriptionDetails();
+                }).catch(function(err) {
+                    alert('Erro ao retomar: ' + (err.data ? err.data.error : 'Erro de conexão'));
+                });
+            };
+            
+            $scope.cancelSubscription = function() {
+                if (!confirm('Tem certeza? Esta ação não pode ser desfeita!')) return;
+                
+                $http.post(API + '/subscription/cancel').then(function(res) {
+                    $scope.showCancelModal = false;
+                    alert('Assinatura cancelada.');
+                    $scope.loadSubscriptionDetails();
+                }).catch(function(err) {
+                    alert('Erro ao cancelar: ' + (err.data ? err.data.error : 'Erro de conexão'));
+                });
             };
         });
     </script>
