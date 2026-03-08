@@ -1,4 +1,4 @@
-FROM php:8.2-apache
+FROM php:8.2-cli
 
 RUN apt-get update && apt-get install -y \
     libzip-dev \
@@ -10,25 +10,9 @@ RUN apt-get update && apt-get install -y \
 # Install Composer
 RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
 
-RUN a2enmod rewrite
+COPY --chown=www-data:www-data . /app
 
-# Listen on port 8080
-RUN sed -i 's/Listen 80/Listen 8080/' /etc/apache2/ports.conf
-
-# Configure Apache for Laravel
-RUN echo "Listen 8080" > /etc/apache2/sites-available/000-default.conf \
-    && echo "<VirtualHost *:8080>" >> /etc/apache2/sites-available/000-default.conf \
-    && echo "    DocumentRoot /var/www/html/public" >> /etc/apache2/sites-available/000-default.conf \
-    && echo "    <Directory /var/www/html/public>" >> /etc/apache2/sites-available/000-default.conf \
-    && echo "        Options Indexes FollowSymLinks" >> /etc/apache2/sites-available/000-default.conf \
-    && echo "        AllowOverride All" >> /etc/apache2/sites-available/000-default.conf \
-    && echo "        Require all granted" >> /etc/apache2/sites-available/000-default.conf \
-    && echo "    </Directory>" >> /etc/apache2/sites-available/000-default.conf \
-    && echo "</VirtualHost>" >> /etc/apache2/sites-available/000-default.conf
-
-COPY --chown=www-data:www-data . /var/www/html
-
-WORKDIR /var/www/html
+WORKDIR /app
 
 # Create cache directories
 RUN mkdir -p bootstrap/cache storage/framework/cache storage/framework/views storage/logs \
@@ -40,4 +24,4 @@ RUN php artisan config:cache
 
 EXPOSE 8080
 
-CMD ["apache2-foreground"]
+CMD ["php", "-S", "0.0.0.0:8080", "-t", "public"]
