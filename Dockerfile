@@ -1,9 +1,9 @@
-FROM php:8.2-cli
+FROM webdevops/php-nginx:8.2
 
 WORKDIR /app
 
 # Install required extensions
-RUN apt-get update && apt-get install -y unzip libzip-dev libonig-dev libcurl4-openssl-dev \
+RUN apt-get update && apt-get install -y unzip libzip-dev libonig-dev \
     && docker-php-ext-install zip pdo pdo_mysql
 
 # Ensure cache directories exist
@@ -19,15 +19,12 @@ RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local
 # Fix permissions
 RUN chmod -R 755 /app && chmod -R 775 /app/bootstrap /app/storage
 
+# Configure Nginx
+ENV WEB_DOCUMENT_ROOT=/app/public
+ENV PHP_DISPLAY_ERRORS=off
+ENV PHP_LOG_ERRORS=off
+
 EXPOSE 8080
 
-# Startup script
-RUN echo '#!/bin/bash' > /startup.sh && \
-    echo 'echo "Starting ServicoSimples..."' >> /startup.sh && \
-    echo 'php artisan migrate --force --no-interaction 2>/dev/null || true' >> /startup.sh && \
-    echo 'php artisan config:cache' >> /startup.sh && \
-    echo 'php artisan route:cache' >> /startup.sh && \
-    echo 'exec php -S 0.0.0.0:8080 -t public public/index.php' >> /startup.sh && \
-    chmod +x /startup.sh
-
-CMD ["/startup.sh"]
+# Startup
+CMD ["php-fpm"]
