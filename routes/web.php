@@ -8,9 +8,9 @@ use Illuminate\Support\Facades\Route;
 |--------------------------------------------------------------------------
 */
 
-// Landing page (home)
+// Landing page - serve static PWA site
 Route::get('/', function () {
-    return view('landing');
+    return response()->file(public_path('index.html'));
 });
 
 // App (authenticated area) - serves the AngularJS app

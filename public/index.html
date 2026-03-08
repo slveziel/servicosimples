@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#2d7a5f">
+    <meta name="description" content="Andressa Siqueira - Veterinária atendimento domiciliar">
+    <title>Drª Andressa Siqueira | Veterinária Domiciliar</title>
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐾</text></svg>">
+    <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐾</text></svg>">
+    <style>
+        :root {
+            --primary: #2d7a5f;
+            --primary-dark: #1e5542;
+            --accent: #f4a261;
+            --bg: #f8f6f0;
+            --card: #fff;
+            --text: #333;
+            --text-light: #666;
+        }
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            background-image: radial-gradient(circle at 20% 80%, rgba(45,122,95,0.08) 0%, transparent 50%),
+                              radial-gradient(circle at 80% 20%, rgba(244,162,97,0.1) 0%, transparent 50%);
+        }
+        
+        .header {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            padding: 2rem 1rem;
+            text-align: center;
+            color: white;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .header::before {
+            content: '🐾';
+            position: absolute;
+            font-size: 8rem;
+            opacity: 0.1;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+        
+        .header h1 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+        
+        .header .subtitle {
+            font-size: 1rem;
+            opacity: 0.9;
+        }
+        
+        .header .subtitle::before {
+            content: '🏠 ';
+        }
+        
+        .container {
+            max-width: 480px;
+            margin: 0 auto;
+            padding: 1.5rem 1rem;
+        }
+        
+        .card {
+            background: var(--card);
+            border-radius: 16px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+        }
+        
+        .card-title {
+            font-size: 1.1rem;
+            color: var(--primary);
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .card-title span { font-size: 1.3rem; }
+        
+        .services {
+            display: grid;
+            gap: 0.75rem;
+        }
+        
+        .service-item {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem;
+            background: var(--bg);
+            border-radius: 10px;
+            font-size: 0.95rem;
+        }
+        
+        .service-item .icon {
+            width: 36px;
+            height: 36px;
+            background: var(--primary);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+        }
+        
+        .cta-button {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            background: var(--primary);
+            color: white;
+            padding: 1rem 1.5rem;
+            border-radius: 12px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 1rem;
+            transition: transform 0.2s, box-shadow 0.2s;
+            box-shadow: 0 4px 15px rgba(45,122,95,0.3);
+        }
+        
+        .cta-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(45,122,95,0.4);
+        }
+        
+        .cta-button.whatsapp {
+            background: #25d366;
+            box-shadow: 0 4px 15px rgba(37,211,102,0.3);
+        }
+        
+        .cta-button.whatsapp:hover {
+            box-shadow: 0 6px 20px rgba(37,211,102,0.4);
+        }
+        
+        .contact-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.75rem;
+        }
+        
+        .contact-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.9rem;
+        }
+        
+        .contact-item .icon {
+            font-size: 1.2rem;
+        }
+        
+        .hero-image {
+            text-align: center;
+            padding: 1rem 0;
+        }
+        
+        .hero-image .emoji {
+            font-size: 4rem;
+            display: block;
+            margin-bottom: 0.5rem;
+        }
+        
+        .hero-image p {
+            color: var(--text-light);
+            font-size: 0.9rem;
+        }
+        
+        .testimonial {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: white;
+            padding: 1.5rem;
+            border-radius: 16px;
+            text-align: center;
+        }
+        
+        .testimonial p {
+            font-style: italic;
+            font-size: 1rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .testimonial .author {
+            opacity: 0.8;
+            font-size: 0.85rem;
+        }
+        
+        .footer {
+            text-align: center;
+            padding: 2rem 1rem;
+            color: var(--text-light);
+            font-size: 0.85rem;
+        }
+        
+        .footer .heart {
+            color: #e74c3c;
+        }
+        
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-5px); }
+        }
+        
+        .paw-animation {
+            display: inline-block;
+            animation: bounce 2s infinite;
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <h1>Drª Andressa Siqueira</h1>
+        <p class="subtitle">Veterinária Domiciliar</p>
+    </header>
+    
+    <main class="container">
+        <div class="card hero-image">
+            <span class="emoji">🐕🐈</span>
+            <p>Cuidados especiais para seu pet no conforto de casa</p>
+        </div>
+        
+        <a href="https://wa.me/5541996494770?text=Olá! Gostaria de agendar uma consulta veterinária." class="cta-button whatsapp" target="_blank">
+            📱 Agendar Consulta no WhatsApp
+        </a>
+        
+        <div class="card">
+            <h2 class="card-title"><span>⚕️</span> Serviços</h2>
+            <div class="services">
+                <div class="service-item">
+                    <div class="icon">💉</div>
+                    <span>Vacinação</span>
+                </div>
+                <div class="service-item">
+                    <div class="icon">🔬</div>
+                    <span>Exames Clínicos</span>
+                </div>
+                <div class="service-item">
+                    <div class="icon">✂️</div>
+                    <span>Tosa e Higiene</span>
+                </div>
+                <div class="service-item">
+                    <div class="icon">💊</div>
+                    <span>Aplicação de Medicamentos</span>
+                </div>
+                <div class="service-item">
+                    <div class="icon">🦷</div>
+                    <span>Cuidados Dentais</span>
+                </div>
+                <div class="service-item">
+                    <div class="icon">🩺</div>
+                    <span>Check-up Completo</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card">
+            <h2 class="card-title"><span>📍</span> Atendimento</h2>
+            <div class="contact-grid">
+                <div class="contact-item">
+                    <span class="icon">🏠</span>
+                    <span>À domicílio</span>
+                </div>
+                <div class="contact-item">
+                    <span class="icon">📍</span>
+                    <span>Curitiba/PR</span>
+                </div>
+                <div class="contact-item">
+                    <span class="icon">⏰</span>
+                    <span>Seg a Sáb</span>
+                </div>
+                <div class="contact-item">
+                    <span class="icon">📱</span>
+                    <span>41 99649-4770</span>
+                </div>
+            </div>
+        </div>
+        
+        <a href="tel:+5541996494770" class="cta-button">
+            📞 Ligar Agora
+        </a>
+        
+        <div class="card testimonial">
+            <p>"Cuidar dos animais é minha paixão. Trago todo o conforto do consultório para a casa do seu pet."</p>
+            <p class="author">— Drª Andressa Siqueira <span class="paw-animation">🐾</span></p>
+        </div>
+        
+        <div class="card">
+            <h2 class="card-title"><span>✨</span> Por que atendimento domiciliar?</h2>
+            <div class="services">
+                <div class="service-item">
+                    <div class="icon">😌</div>
+                    <span>Pet mais relaxed sem estresse de transporte</span>
+                </div>
+                <div class="service-item">
+                    <div class="icon">⏰</div>
+                    <span>Horários flexíveis</span>
+                </div>
+                <div class="service-item">
+                    <div class="icon">🏠</div>
+                    <span>Ambiente familiar e seguro</span>
+                </div>
+                <div class="service-item">
+                    <div class="icon">👨‍👩‍👧</div>
+                    <span>Atenção personalizada</span>
+                </div>
+            </div>
+        </div>
+    </main>
+    
+    <footer class="footer">
+        <p>Feito com <span class="heart">❤</span> para pets</p>
+        <p>© 2026 Andressa Siqueira Veterinária</p>
+    </footer>
+
+    <script>
+        // Register Service Worker for PWA
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('sw.js')
+                .then(reg => console.log('SW registered'))
+                .catch(err => console.log('SW error:', err));
+        }
+    </script>
+</body>
+</html>
