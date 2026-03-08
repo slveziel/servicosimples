@@ -30,9 +30,13 @@ COPY --chown=www-data:www-data . /var/www/html
 
 WORKDIR /var/www/html
 
-RUN composer install --no-dev --optimize-autoloader --no-interaction
+# Create cache directories
+RUN mkdir -p bootstrap/cache storage/framework/cache storage/framework/views storage/logs \
+    && chmod -R 775 bootstrap/cache storage
 
-RUN chmod -R 755 /var/www/html/storage /var/www/html/bootstrap/cache
+RUN composer install --no-dev --optimize-autoloader --no-interaction --no-scripts
+
+RUN php artisan config:cache && php artisan route:cache
 
 EXPOSE 8080
 
