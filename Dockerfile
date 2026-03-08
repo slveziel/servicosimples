@@ -7,6 +7,9 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/* \
     && docker-php-ext-install zip pdo pdo_mysql
 
+# Install Composer
+RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
+
 RUN a2enmod rewrite
 
 # Listen on port 8080
@@ -29,7 +32,7 @@ WORKDIR /var/www/html
 
 RUN composer install --no-dev --optimize-autoloader --no-interaction
 
-RUN chmod -R 755 /app/storage /app/bootstrap/cache
+RUN chmod -R 755 /var/www/html/storage /var/www/html/bootstrap/cache
 
 EXPOSE 8080
 
