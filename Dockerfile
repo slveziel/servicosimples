@@ -20,8 +20,6 @@ RUN mkdir -p bootstrap/cache storage/framework/cache storage/framework/views sto
 
 RUN composer install --no-dev --optimize-autoloader --no-interaction --no-scripts
 
-RUN php artisan config:cache
-
 EXPOSE 8080
 
 CMD ["php", "-S", "0.0.0.0:8080", "-t", "public"]
