@@ -24,12 +24,6 @@ Route::get('/dashboard', [OrdemServicoController::class, 'dashboard']);
 // Webhook do Asaas (público)
 Route::post('/asaas/webhook', [SubscriptionController::class, 'webhook']);
 
-// Temporary route for migrations
-Route::get('/migrate', function () {
-    \Illuminate\Support\Facades\Artisan::call('migrate', ['--force' => true]);
-    return response()->json(['message' => 'Migrations completed']);
-});
-
 // ========== AUTENTICAÇÃO ==========
 
 Route::post('/auth/register', [AuthController::class, 'register'])->name('auth.register');
