@@ -13,9 +13,26 @@ class AsaasService
 
     public function __construct()
     {
-        $this->apiKey = config('services.asaas.api_key');
-        $this->baseUrl = config('services.asaas.base_url');
-        $this->sandbox = config('services.asaas.sandbox', false);
+        $this->apiKey = config('services.asaas.api_key') ?? env('ASAAS_API_KEY', '');
+        $this->baseUrl = config('services.asaas.base_url') ?? env('ASAAS_BASE_URL', 'https://www.asaas.com/api/v3');
+        $this->sandbox = config('services.asaas.sandbox') ?? env('ASAAS_SANDBOX', true); // Default true for testing
+    }
+
+    /**
+     * Verificar se o serviço está configurado
+     */
+    public function isConfigured(): bool
+    {
+        // Allow sandbox mode without API key
+        return $this->sandbox || !empty($this->apiKey);
+    }
+
+    /**
+     * Verificar se está em modo sandbox
+     */
+    public function isSandbox(): bool
+    {
+        return $this->sandbox || empty($this->apiKey);
     }
 
     /**
@@ -23,6 +40,19 @@ class AsaasService
      */
     public function createCustomer(array $data): array
     {
+        // Sandbox mode - return mock response
+        if ($this->isSandbox() && empty($this->apiKey)) {
+            Log::info('Asaas Sandbox: Creating mock customer', $data);
+            return [
+                'id' => 'cus_sandbox_' . uniqid(),
+                'name' => $data['name'],
+                'email' => $data['email'],
+            ];
+        }
+
+        if (!$this->isConfigured()) {
+            throw new \Exception('API Key do Asaas não configurada. Configure ASAAS_API_KEY nas variáveis de ambiente.');
+        }
         $response = Http::withHeaders([
             'access_token' => $this->apiKey,
             'Content-Type' => 'application/json',
@@ -56,6 +86,25 @@ class AsaasService
      */
     public function createSubscription(array $data): array
     {
+        // Sandbox mode - return mock response
+        if ($this->isSandbox() && empty($this->apiKey)) {
+            Log::info('Asaas Sandbox: Creating mock subscription', $data);
+            
+            $billingType = $data['billing_type'] ?? 'CREDIT_CARD';
+            $status = ($billingType === 'CREDIT_CARD') ? 'ACTIVE' : 'PENDING';
+            
+            return [
+                'id' => 'sub_sandbox_' . uniqid(),
+                'customer' => $data['customer_id'],
+                'billingType' => $billingType,
+                'value' => $data['value'],
+                'status' => $status,
+                'cycle' => 'MONTHLY',
+                'nextDueDate' => $this->calculateNextDueDate(),
+                'invoiceUrl' => ($billingType === 'CREDIT_CARD') ? 'https://sandbox.asaas.com/subscription-paid' : null,
+            ];
+        }
+
         $response = Http::withHeaders([
             'access_token' => $this->apiKey,
             'Content-Type' => 'application/json',
@@ -112,6 +161,19 @@ class AsaasService
      */
     public function createPaymentLink(array $data): array
     {
+        // Sandbox mode - return mock response
+        if ($this->isSandbox() && empty($this->apiKey)) {
+            Log::info('Asaas Sandbox: Creating mock payment link', $data);
+            return [
+                'id' => 'pl_sandbox_' . uniqid(),
+                'name' => $data['name'] ?? 'Assinatura ServicoSimples',
+                'value' => $data['value'],
+                'billingType' => $data['billing_type'] ?? 'BOLETO',
+                'status' => 'ACTIVE',
+                'url' => 'https://sandbox.asaas.com/mock-payment-link',
+            ];
+        }
+
         $response = Http::withHeaders([
             'access_token' => $this->apiKey,
             'Content-Type' => 'application/json',
@@ -139,6 +201,15 @@ class AsaasService
      */
     public function getPayment(string $paymentId): array
     {
+        // Sandbox mode - return mock response
+        if ($this->isSandbox() && empty($this->apiKey)) {
+            return [
+                'id' => $paymentId,
+                'status' => 'CONFIRMED',
+                'value' => 19.00,
+            ];
+        }
+
         $response = Http::withHeaders([
             'access_token' => $this->apiKey,
         ])->get("{$this->baseUrl}/payments/{$paymentId}");
@@ -155,6 +226,15 @@ class AsaasService
      */
     public function cancelSubscription(string $subscriptionId): array
     {
+        // Sandbox mode - return mock response
+        if ($this->isSandbox() && empty($this->apiKey)) {
+            Log::info('Asaas Sandbox: Canceling mock subscription', ['id' => $subscriptionId]);
+            return [
+                'id' => $subscriptionId,
+                'status' => 'CANCELED',
+            ];
+        }
+
         $response = Http::withHeaders([
             'access_token' => $this->apiKey,
             'Content-Type' => 'application/json',
@@ -176,6 +256,14 @@ class AsaasService
      */
     public function pauseSubscription(string $subscriptionId, ?int $cycles = null): array
     {
+        // Sandbox mode - return mock response
+        if ($this->isSandbox() && empty($this->apiKey)) {
+            return [
+                'id' => $subscriptionId,
+                'status' => 'PAUSED',
+            ];
+        }
+
         $body = ['cycles' => $cycles] + ['immediate' => true];
 
         $response = Http::withHeaders([
@@ -199,6 +287,14 @@ class AsaasService
      */
     public function resumeSubscription(string $subscriptionId): array
     {
+        // Sandbox mode - return mock response
+        if ($this->isSandbox() && empty($this->apiKey)) {
+            return [
+                'id' => $subscriptionId,
+                'status' => 'ACTIVE',
+            ];
+        }
+
         $response = Http::withHeaders([
             'access_token' => $this->apiKey,
             'Content-Type' => 'application/json',

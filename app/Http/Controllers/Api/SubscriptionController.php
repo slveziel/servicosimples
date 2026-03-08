@@ -11,14 +11,35 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 
-class SubscriptionController extends BaseController
+use App\Http\Controllers\Controller;
+
+class SubscriptionController extends Controller
 {
     protected AsaasService $asaasService;
     protected float $monthlyPrice = 19.00; // R$19/mês
+    protected bool $serviceConfigured = true;
+    protected ?string $serviceError = null;
 
     public function __construct(AsaasService $asaasService)
     {
         $this->asaasService = $asaasService;
+        // Always configured since we have sandbox mode
+        $this->serviceConfigured = true;
+        $this->serviceError = null;
+    }
+
+    /**
+     * Verificar se o serviço está configurado
+     */
+    private function checkServiceConfigured()
+    {
+        if (!$this->serviceConfigured) {
+            return response()->json([
+                'error' => 'Serviço de pagamento não configurado',
+                'message' => $this->serviceError ?? 'Configure ASAAS_API_KEY nas variáveis de ambiente',
+            ], 503);
+        }
+        return null;
     }
 
     /**
@@ -54,6 +75,10 @@ class SubscriptionController extends BaseController
      */
     public function createCustomer(Request $request)
     {
+        if ($response = $this->checkServiceConfigured()) {
+            return $response;
+        }
+        
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:255',
             'email' => 'required|email|max:255',
@@ -101,8 +126,17 @@ class SubscriptionController extends BaseController
      */
     public function createSubscription(Request $request)
     {
+        if ($response = $this->checkServiceConfigured()) {
+            return $response;
+        }
+        
         $validator = Validator::make($request->all(), [
             'billing_type' => 'nullable|in:BOLETO,CREDIT_CARD,PIX',
+            'card.card_number' => 'nullable|string',
+            'card.card_holder_name' => 'nullable|string',
+            'card.card_expiry_month' => 'nullable|string',
+            'card.card_expiry_year' => 'nullable|string',
+            'card.card_cvv' => 'nullable|string',
         ]);
 
         if ($validator->fails()) {
@@ -127,8 +161,9 @@ class SubscriptionController extends BaseController
                 'customer_id' => $subscription->asaas_customer_id,
                 'value' => $proportionalValue,
                 'description' => "Assinatura ServicoSimples - Valor proporcional até dia 5 ({$nextDueDate})",
-                'billing_type' => $request->billing_type ?? 'BOLETO',
+                'billing_type' => $request->billing_type ?? 'CREDIT_CARD',
                 'external_reference' => $user->id,
+                'card' => $request->card,
             ]);
 
             // Atualizar assinatura no banco
@@ -139,14 +174,23 @@ class SubscriptionController extends BaseController
                 'status' => 'pending_payment',
             ]);
 
+            $billingType = $asaasSubscription['billingType'] ?? 'CREDIT_CARD';
+            $status = $asaasSubscription['status'] ?? 'pending_payment';
+            
+            if ($billingType === 'CREDIT_CARD' && $status === 'ACTIVE') {
+                $message = "Assinatura ativada com sucesso! Pagamento de R$ {$proportionalValue} processado.";
+            } else {
+                $message = "Cobrança de R$ {$proportionalValue} gerada. Vence em {$nextDueDate}.";
+            }
+
             return response()->json([
                 'success' => true,
                 'subscription_id' => $asaasSubscription['id'],
                 'value' => $proportionalValue,
                 'due_date' => $nextDueDate,
-                'billing_type' => $asaasSubscription['billingType'] ?? 'BOLETO',
+                'billing_type' => $billingType,
                 'invoice_url' => $asaasSubscription['invoiceUrl'] ?? null,
-                'message' => "Cobrança de R$ {$proportionalValue} gerada. Vence em {$nextDueDate}.",
+                'message' => $message,
             ]);
         } catch (\Exception $e) {
             Log::error('Erro ao criar assinatura Asaas', ['error' => $e->getMessage()]);

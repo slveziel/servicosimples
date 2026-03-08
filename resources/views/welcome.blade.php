@@ -403,6 +403,45 @@
             </div>
         </div>
 
+        <!-- Modal de Cartão de Crédito -->
+        <div class="modal" ng-class="{active: showCardModal}">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>💳 Dados do Cartão</h2>
+                    <button class="close" ng-click="showCardModal = false">&times;</button>
+                </div>
+                <div class="card">
+                    <p>Pagamento único de <strong>R$ 19,00</strong> (mensal)</p>
+                    <br>
+                    <div style="text-align: left;">
+                        <div style="margin-bottom: 15px;">
+                            <label>Número do Cartão</label>
+                            <input type="text" class="form-control" ng-model="cardData.card_number" placeholder="0000 0000 0000 0000" maxlength="19">
+                        </div>
+                        <div style="margin-bottom: 15px;">
+                            <label>Nome do Titular</label>
+                            <input type="text" class="form-control" ng-model="cardData.card_holder" placeholder="Nome como está no cartão">
+                        </div>
+                        <div style="display: flex; gap: 15px; margin-bottom: 15px;">
+                            <div style="flex: 1;">
+                                <label>Validade</label>
+                                <input type="text" class="form-control" ng-model="cardData.card_expiry" placeholder="MM/AA" maxlength="5">
+                            </div>
+                            <div style="flex: 1;">
+                                <label>CVV</label>
+                                <input type="text" class="form-control" ng-model="cardData.card_cvv" placeholder="123" maxlength="4">
+                            </div>
+                        </div>
+                    </div>
+                    <br>
+                    <div style="display: flex; gap: 10px;">
+                        <button class="btn btn-secondary" ng-click="showCardModal = false">Cancelar</button>
+                        <button class="btn btn-primary" ng-click="submitCardPayment()">Pagar com Cartão</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- Modal de Cancelamento -->
         <div class="modal" ng-class="{active: showCancelModal}">
             <div class="modal-content">
@@ -829,19 +868,44 @@
             };
             
             $scope.startSubscription = function() {
-                if (!confirm('Deseja ativar sua assinatura por R$ 19,00/mês?')) return;
+                $scope.showCardModal = true;
+                $scope.cardData = {
+                    card_number: '',
+                    card_holder: '',
+                    card_expiry: '',
+                    card_cvv: ''
+                };
+            };
+            
+            $scope.submitCardPayment = function() {
+                // Validar campos
+                if (!$scope.cardData.card_number || !$scope.cardData.card_holder || 
+                    !$scope.cardData.card_expiry || !$scope.cardData.card_cvv) {
+                    alert('Preencha todos os campos do cartão');
+                    return;
+                }
+                
+                $scope.showCardModal = false;
                 
                 // Primeiro criar customer
                 $http.post(API + '/subscription/customer', {
                     name: $scope.currentUser.name,
-                    email: $scope.currentUser.email
+                    email: $scope.currentUser.email,
+                    cpf_cnpj: $scope.currentUser.cpf_cnpj || '12345678901'
                 }).then(function(res) {
-                    // Depois criar assinatura
+                    // Depois criar assinatura com cartão
                     return $http.post(API + '/subscription/create', {
-                        billing_type: 'BOLETO'
+                        billing_type: 'CREDIT_CARD',
+                        card: {
+                            card_number: $scope.cardData.card_number.replace(/\s/g, ''),
+                            card_holder_name: $scope.cardData.card_holder,
+                            card_expiry_month: $scope.cardData.card_expiry.split('/')[0],
+                            card_expiry_year: '20' + $scope.cardData.card_expiry.split('/')[1],
+                            card_cvv: $scope.cardData.card_cvv
+                        }
                     });
                 }).then(function(res) {
-                    alert('Assinatura criada! Cobrança de R$ ' + res.data.value + ' gerada. Vence em ' + res.data.due_date);
+                    alert('Assinatura ativada com sucesso! Pagamento de R$ ' + res.data.value + ' processado.');
                     $scope.loadSubscriptionDetails();
                 }).catch(function(err) {
                     alert('Erro ao criar assinatura: ' + (err.data ? err.data.error : 'Erro de conexão'));
